@@ -1,26 +1,128 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
-:root {
+@theme {
+  --font-sans: "Arial, Helvetica, sans-serif";
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+  font-family: var(--font-sans);
+}
+
+/* Page Break Styling */
+/* Page Break Styling (Widget) */
+.page-break-marker {
+  height: 24px;
+  background-color: #F3F4F6; /* Match app background to look like a gap */
+  width: 100vw; /* Attempt to span full */
+  margin-left: -96px; /* Counteract padding */
+  margin-right: -96px;
+  width: calc(100% + 192px); /* Span the padding width */
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  pointer-events: none;
+}
+
+/* --- 1. VISUAL PAGE BREAK (SCREEN ONLY) --- */
+/* This makes the gap look like the space between two physical papers */
+.page-break-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  background-color: #F3F4F6; /* Match app background */
+  
+  /* Logic to stretch across the editor's padding */
+  width: calc(100% + 192px); /* 100% + (96px left padding + 96px right padding) */
+  margin-left: -96px; 
+  margin-right: -96px;
+  
+  /* Borders to mimic paper edges */
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  
+  /* Spacing */
+  margin-top: 10px;
+  margin-bottom: 10px;
+  
+  /* Non-interactive label */
+  pointer-events: none;
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* --- 2. PRINT / PDF EXPORT RESET --- */
+@media print {
+  /* Kill browser defaults (localhost text, date, margins) */
+  @page {
+    margin: 0mm;
+    size: letter;
+  }
+
+  /* Hide the entire App UI */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Reset HTML/Body for full control */
+  html, body {
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+  
+  /* Reset Sidebar Margins from MainLayout */
+  main, div, section, nav, aside {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  /* Target the Editor Content specifically */
+  .ProseMirror, .ProseMirror * {
+    visibility: visible;
+  }
+
+  .ProseMirror {
+    position: absolute;
+    left: 0 !important;
+    top: 0 !important;
+    width: 8.5in !important;  /* Force US Letter Width */
+    padding: 1in !important;  /* WE enforce the 1-inch margin here */
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+    overflow: visible !important;
+    box-sizing: border-box !important; /* Ensure padding is included in width */
+  }
+
+  /* Hide the gray gap visual, but enforce the physical break */
+  .page-break-marker {
+    opacity: 0; 
+    height: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    break-after: always !important; 
+    page-break-after: always !important; 
+    break-before: avoid !important;
+  }
 }
