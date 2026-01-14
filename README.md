@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OpenSphere Tiptap Document Editor
 
-## Getting Started
+A production-ready rich text editor built with **Next.js** and **Tiptap**, featuring real-time "Print View" pagination, table support, and pixel-perfect PDF export.
 
-First, run the development server:
+## 🚀 Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This project was built to solve a core challenge for legal professionals: **Drafting documents with certainty.** Unlike standard web editors that treat text as a continuous scroll, this editor visualizes **US Letter (8.5" x 11")** page boundaries in real-time. It ensures that the specific clause, signature, or table row you see on Page 1 is exactly where it will appear when submitted to USCIS.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Key Features
+* **📄 Real-Time Pagination:** Visual page breaks update instantly as you type.
+* **🖨️ 1:1 PDF Export:** Server-side generation (Puppeteer) guarantees the downloaded PDF matches the editor exactly, pixel-for-pixel.
+* **📊 Advanced Tables:** Insert tables with row/column controls that correctly split across pages.
+* **🎨 Rich Formatting:** Full support for Fonts, Sizes, Colors, Highlights, and Alignment.
+* **⚡ Modern Stack:** Built on Next.js 14 (App Router) and Tailwind CSS.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Technology Stack
 
-## Learn More
+* **Frontend:** Next.js 16, React 19, Tailwind CSS v4
+* **Editor Engine:** Tiptap (Headless wrapper around ProseMirror)
+* **Pagination:** `tiptap-pagination-plus` (Community extension for DOM-based splitting)
+* **PDF Generation:** Puppeteer Core + Sparticuz Chromium (Serverless-compatible)
+* **Icons:** Lucide React
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## ⚙️ Setup & Installation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1.  **Clone the repository**
+    ```bash
+    git clone [https://github.com/your-username/opensphere-editor.git](https://github.com/your-username/opensphere-editor.git)
+    cd opensphere-editor
+    ```
 
-## Deploy on Vercel
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3.  **Run the development server**
+    ```bash
+    npm run dev
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4.  **Open locally**
+    Visit `http://localhost:3000` to see the editor in action.
+
+---
+
+## 🧩 Architectural Design Decisions
+
+### 1. The "Pagination Problem"
+Rich text on the web usually flows freely (`height: auto`). To simulate paper:
+* **Approach:** We utilized the `tiptap-pagination-plus` extension.
+* **Why:** Calculating where a paragraph breaks requires measuring the rendered DOM height against a fixed page height (1060px for Letter). Doing this manually involves complex logic to handle "widows," "orphans," and splitting HTML nodes. This library handles the decorations and splitting logic efficiently.
+
+### 2. Server-Side PDF Generation (The "WYSIWYG" Guarantee)
+* **Challenge:** The browser's native `window.print()` is unreliable. It often ignores background colors, changes margins based on user printer settings, and scales fonts differently.
+* **Solution:** We implemented a Next.js API route (`/api/generate-pdf`) using **Puppeteer**.
+* **How it works:** 1. The editor sends its HTML content to the server.
+    2. Puppeteer launches a headless Chrome instance.
+    3. We inject the *exact same* CSS variables, fonts (Inter), and dimensions (818px width) used in the frontend.
+    4. The page is printed to PDF with strict `@page` CSS rules.
+* **Result:** The downloaded PDF is indistinguishable from the editor view.
+
+### 3. Headers & Footers
+* **Decision:** While the editor supports interactive footers for drafting context (e.g., viewing page numbers), they are currently **excluded** from the final PDF export.
+* **Reasoning:** To ensure 100% layout stability across different PDF viewers, we prioritized the main content body. The header/footer implementation in the print engine is currently handled via CSS `@page` margins to keep the document clean for legal submission standards.
+
+### 4. Margins & Dimensions
+* **Config:** We used a fixed width of `818px` and height of `1060px` to simulate US Letter size at ~96 DPI.
+* **Margins:** Set to ~0.75 inches (70px) to balance readability on smaller laptop screens while maintaining the official aspect ratio required for legal documents.
+
+---
+
+## 🧪 How to Test
+
+1.  **Type & Overflow:** Keep typing until content reaches the bottom of Page 1. Watch it automatically flow to Page 2.
+2.  **Tables:** Insert a table near the bottom of a page. Add rows until it splits. The table will elegantly continue on the next page with headers preserved (if configured).
+3.  **PDF Export:** Click the "Download PDF" icon in the toolbar. 
+
+---
+
+## 🔮 Future Improvements
+
+* **Dynamic Headers:** Implement CSS Paged Media `@top-center` support to render headers natively in the PDF.
+* **Comments & Collaboration:** Leverage Tiptap's Y.js integration to allow real-time multiplayer editing.
+* **Docx Export:** Add support for exporting to Microsoft Word format for legacy workflows.
+
+---
+
+**Submitted by:** Sumit  
+**For:** OpenSphere Full-Stack Intern Assignment
