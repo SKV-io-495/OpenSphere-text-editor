@@ -14,11 +14,21 @@ import {
   ListOrdered,
   Check,
   Download,
-  Loader2
+  Loader2,
+  Type,
+  Link as LinkIcon,
+  Palette,
+  Highlighter,
+  Table as TableIcon,
+  Plus,
+  Trash,
+  Columns,
+  Rows,
+  FileType
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 import { SaveStatus } from '@/hooks/useDocumentSave';
+import { Modal } from '@/components/ui/Modal';
 
 interface ToolbarProps {
   editor: Editor | null;
@@ -27,10 +37,12 @@ interface ToolbarProps {
 
 export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-
-  if (!editor) {
-    return null;
-  }
+  
+  /* --- MODAL STATES --- */
+  const [activeModal, setActiveModal] = useState<'link' | null>(null);
+  
+  // Link State
+  const [linkUrl, setLinkUrl] = useState('');
 
   const handleDownloadPDF = async () => {
     if (!editor || isGeneratingPDF) return;
@@ -38,10 +50,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) =>
     setIsGeneratingPDF(true);
 
     try {
-      // Get HTML content from the editor
       const html = editor.getHTML();
-
-      // Call the PDF generation API
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
         headers: {
@@ -55,10 +64,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) =>
         throw new Error(errorData.error || 'Failed to generate PDF');
       }
 
-      // Get the PDF blob
       const blob = await response.blob();
-
-      // Create download link
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -75,19 +81,66 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) =>
     }
   };
 
+  if (!editor) {
+    return null;
+  }
+
+  // Handlers to open modals
+  const openLinkModal = () => {
+    const previousUrl = editor.getAttributes('link').href;
+    setLinkUrl(previousUrl || '');
+    setActiveModal('link');
+  };
+
+  // Handlers to submit modals
+  const submitLink = () => {
+    if (linkUrl === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    } else {
+      // If selection is empty, insert the URL as text with the link
+      if (editor.state.selection.empty) {
+        editor.chain().focus().insertContent(`<a href="${linkUrl}">${linkUrl}</a>`).run();
+      } else {
+        // Otherwise apply link to selected text
+        editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run();
+      }
+    }
+    setActiveModal(null);
+  };
+
+  const fontSizes = [10, 11, 12, 14, 16, 18, 24, 30, 36, 48, 60, 72];
+
   const fonts = [
     { name: 'Serif (Times)', value: '"Times New Roman", Times, serif' },
-    { name: 'Sans (Inter)', value: 'Inter, sans-serif' },
+    { name: 'Arial', value: 'Arial, Helvetica, sans-serif' },
+    { name: 'Comic Sans', value: '"Comic Sans MS", "Comic Sans", cursive' },
+    { name: 'Courier New', value: '"Courier New", Courier, monospace' },
+    { name: 'Georgia', value: 'Georgia, serif' },
+    { name: 'Helvetica', value: 'Helvetica, Arial, sans-serif' },
+    { name: 'Lucida', value: '"Lucida Sans Unicode", "Lucida Grande", sans-serif' },
+    { name: 'Roboto', value: 'Roboto, sans-serif' },
+    { name: 'Bookman Old', value: '"Bookman Old Style", serif' },
+    { name: 'Garamond', value: 'Garamond, serif' },
+    { name: 'Verdana', value: 'Verdana, sans-serif' },
   ];
 
+  const addTable = () => {
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  };
+
   return (
-    <div className="sticky top-16 z-20 bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 flex-wrap">
-      {/* Font Family Selector */}
-      <div className="relative inline-block text-left mr-2">
+    <>
+      <div className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 flex-wrap shadow-sm">
+      
+      {/* ... (Existing Font/Format Buttons) ... */}
+      
+      {/* --- FONT FAMILY --- */}
+      <div className="relative inline-block text-left">
         <select
-          className="block w-40 pl-3 pr-10 py-1.5 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md border"
+          className="block w-32 pl-2 pr-8 py-1.5 text-xs text-gray-700 border-gray-300 focus:outline-none focus:border-purple-500 rounded-md border"
           onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}
           value={editor.getAttributes('textStyle').fontFamily || '"Times New Roman", Times, serif'}
+          title="Font Family"
         >
           {fonts.map((font) => (
             <option key={font.value} value={font.value}>
@@ -97,15 +150,28 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) =>
         </select>
       </div>
 
-      <div className="h-6 w-px bg-gray-300 mx-2" />
+      {/* --- FONT SIZE --- */}
+      <div className="relative inline-block text-left">
+        <select
+          className="block w-16 pl-2 pr-6 py-1.5 text-xs text-gray-700 border-gray-300 focus:outline-none focus:border-purple-500 rounded-md border"
+          onChange={(e) => editor.chain().focus().setFontSize(`${e.target.value}px`).run()}
+          value={parseInt(editor.getAttributes('textStyle').fontSize) || 16}
+          title="Font Size"
+        >
+          {fontSizes.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      {/* Formatting Tools */}
+      <div className="h-6 w-px bg-gray-300 mx-1" />
+
+       {/* --- FORMATTING --- */}
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
-        className={cn(
-          "p-1.5 rounded hover:bg-gray-100 transition-colors",
-          editor.isActive('bold') ? "bg-purple-100 text-purple-700" : "text-gray-600"
-        )}
+        className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive('bold') ? "bg-purple-100 text-purple-700" : "text-gray-600")}
         title="Bold"
       >
         <Bold className="w-4 h-4" />
@@ -113,10 +179,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) =>
       
       <button
         onClick={() => editor.chain().focus().toggleItalic().run()}
-        className={cn(
-          "p-1.5 rounded hover:bg-gray-100 transition-colors",
-          editor.isActive('italic') ? "bg-purple-100 text-purple-700" : "text-gray-600"
-        )}
+        className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive('italic') ? "bg-purple-100 text-purple-700" : "text-gray-600")}
         title="Italic"
       >
         <Italic className="w-4 h-4" />
@@ -124,123 +187,149 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) =>
 
       <button
         onClick={() => editor.chain().focus().toggleUnderline().run()}
-        className={cn(
-          "p-1.5 rounded hover:bg-gray-100 transition-colors",
-          editor.isActive('underline') ? "bg-purple-100 text-purple-700" : "text-gray-600"
-        )}
+        className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive('underline') ? "bg-purple-100 text-purple-700" : "text-gray-600")}
         title="Underline"
       >
         <UnderlineIcon className="w-4 h-4" />
       </button>
 
-      <div className="h-6 w-px bg-gray-300 mx-2" />
+      {/* Color Picker */}
+      <label className="p-1.5 rounded hover:bg-gray-100 cursor-pointer flex items-center justify-center text-gray-600" title="Text Color">
+        <Palette className="w-4 h-4" />
+        <input
+          type="color"
+          onInput={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()}
+          value={editor.getAttributes('textStyle').color || '#000000'}
+          className="absolute opacity-0 w-0 h-0"
+        />
+      </label>
 
-      {/* Alignment */}
-      <button
-        onClick={() => editor.chain().focus().setTextAlign('left').run()}
-        className={cn(
-          "p-1.5 rounded hover:bg-gray-100 transition-colors",
-          editor.isActive({ textAlign: 'left' }) ? "bg-purple-100 text-purple-700" : "text-gray-600"
-        )}
-        title="Align Left"
-      >
-        <AlignLeft className="w-4 h-4" />
-      </button>
-      
-      <button
-        onClick={() => editor.chain().focus().setTextAlign('center').run()}
-        className={cn(
-          "p-1.5 rounded hover:bg-gray-100 transition-colors",
-          editor.isActive({ textAlign: 'center' }) ? "bg-purple-100 text-purple-700" : "text-gray-600"
-        )}
-        title="Align Center"
-      >
-        <AlignCenter className="w-4 h-4" />
-      </button>
-      
-      <button
-        onClick={() => editor.chain().focus().setTextAlign('right').run()}
-        className={cn(
-          "p-1.5 rounded hover:bg-gray-100 transition-colors",
-          editor.isActive({ textAlign: 'right' }) ? "bg-purple-100 text-purple-700" : "text-gray-600"
-        )}
-        title="Align Right"
-      >
-        <AlignRight className="w-4 h-4" />
-      </button>
-      
+       {/* Highlight (Toggle Yellow) */}
        <button
-        onClick={() => editor.chain().focus().setTextAlign('justify').run()}
-        className={cn(
-          "p-1.5 rounded hover:bg-gray-100 transition-colors",
-          editor.isActive({ textAlign: 'justify' }) ? "bg-purple-100 text-purple-700" : "text-gray-600"
-        )}
-        title="Justify"
+        onClick={() => editor.chain().focus().toggleHighlight({ color: '#ffc078' }).run()}
+        className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive('highlight') ? "bg-yellow-100 text-orange-600" : "text-gray-600")}
+        title="Highlight"
       >
-        <AlignJustify className="w-4 h-4" />
+        <Highlighter className="w-4 h-4" />
       </button>
 
-      <div className="h-6 w-px bg-gray-300 mx-2" />
-
-      {/* Lists */}
+      {/* Link (Opens Modal) */}
       <button
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        className={cn(
-          "p-1.5 rounded hover:bg-gray-100 transition-colors",
-          editor.isActive('bulletList') ? "bg-purple-100 text-purple-700" : "text-gray-600"
-        )}
-        title="Bullet List"
+        onClick={openLinkModal}
+        className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive('link') ? "bg-purple-100 text-purple-700" : "text-gray-600")}
+        title="Link"
       >
+        <LinkIcon className="w-4 h-4" />
+      </button>
+
+      <div className="h-6 w-px bg-gray-300 mx-1" />
+
+       {/* --- ALIGNMENT --- */}
+      <div className="flex gap-0.5">
+        <button onClick={() => editor.chain().focus().setTextAlign('left').run()} className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive({ textAlign: 'left' }) ? "bg-purple-100 text-purple-700" : "text-gray-600")}>
+            <AlignLeft className="w-4 h-4" />
+        </button>
+        <button onClick={() => editor.chain().focus().setTextAlign('center').run()} className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive({ textAlign: 'center' }) ? "bg-purple-100 text-purple-700" : "text-gray-600")}>
+            <AlignCenter className="w-4 h-4" />
+        </button>
+        <button onClick={() => editor.chain().focus().setTextAlign('right').run()} className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive({ textAlign: 'right' }) ? "bg-purple-100 text-purple-700" : "text-gray-600")}>
+            <AlignRight className="w-4 h-4" />
+        </button>
+        <button onClick={() => editor.chain().focus().setTextAlign('justify').run()} className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive({ textAlign: 'justify' }) ? "bg-purple-100 text-purple-700" : "text-gray-600")}>
+            <AlignJustify className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="h-6 w-px bg-gray-300 mx-1" />
+
+      {/* --- LISTS --- */}
+      <button onClick={() => editor.chain().focus().toggleBulletList().run()} className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive('bulletList') ? "bg-purple-100 text-purple-700" : "text-gray-600")}>
         <List className="w-4 h-4" />
       </button>
-
-      <button
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        className={cn(
-          "p-1.5 rounded hover:bg-gray-100 transition-colors",
-          editor.isActive('orderedList') ? "bg-purple-100 text-purple-700" : "text-gray-600"
-        )}
-        title="Ordered List"
-      >
+      <button onClick={() => editor.chain().focus().toggleOrderedList().run()} className={cn("p-1.5 rounded hover:bg-gray-100", editor.isActive('orderedList') ? "bg-purple-100 text-purple-700" : "text-gray-600")}>
         <ListOrdered className="w-4 h-4" />
       </button>
 
-      <div className="h-6 w-px bg-gray-300 mx-2" />
+      <div className="h-6 w-px bg-gray-300 mx-1" />
 
-      {/* Download PDF Button */}
+      {/* --- TABLES --- */}
+      <button
+        onClick={addTable}
+        className={cn("p-1.5 rounded hover:bg-gray-100 text-gray-600")}
+        title="Insert Table"
+      >
+        <TableIcon className="w-4 h-4" />
+      </button>
+
+      {editor.isActive('table') && (
+        <div className="flex items-center gap-1 bg-gray-50 p-0.5 rounded border ml-1 animate-in fade-in slide-in-from-left-2">
+            <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="p-1 hover:bg-gray-200 rounded text-gray-600" title="Add Column">
+                <Columns className="w-3 h-3" />
+            </button>
+            <button onClick={() => editor.chain().focus().addRowAfter().run()} className="p-1 hover:bg-gray-200 rounded text-gray-600" title="Add Row">
+                <Rows className="w-3 h-3" />
+            </button>
+            <button onClick={() => editor.chain().focus().deleteTable().run()} className="p-1 hover:bg-red-100 text-red-500 rounded" title="Delete Table">
+                <Trash className="w-3 h-3" />
+            </button>
+        </div>
+      )}
+
+      <div className="h-6 w-px bg-gray-300 mx-1" />
+
+      <div className="flex-1" />
+
+      {/* --- ACTIONS --- */}
       <button
         onClick={handleDownloadPDF}
         disabled={isGeneratingPDF}
         className={cn(
           "p-1.5 rounded transition-colors flex items-center gap-1",
-          isGeneratingPDF 
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-            : "hover:bg-gray-100 text-gray-600"
+          isGeneratingPDF ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "hover:bg-gray-100 text-gray-600"
         )}
         title="Download PDF"
       >
-        {isGeneratingPDF ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-xs">Generating...</span>
-          </>
-        ) : (
-          <Download className="w-4 h-4" />
-        )}
+        {isGeneratingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
       </button>
       
-      <div className="ml-auto flex items-center text-xs text-gray-400 gap-2">
-         <div className="flex items-center gap-1 min-w-[60px] justify-end">
-             {status === 'saving' ? (
-                <span className="text-gray-400">Saving...</span>
-             ) : (
-               <>
-                 <Check className="w-3 h-3 text-green-500" />
-                 <span className="text-green-600">Saved</span>
-               </>
-             )}
-         </div>
+      <div className="flex items-center text-xs text-gray-400 gap-2 ml-2">
+          {status === 'saving' ? (
+            <span className="text-gray-400">Saving...</span>
+          ) : (
+            <>
+              <Check className="w-3 h-3 text-green-500" />
+              <span className="text-green-600">Saved</span>
+            </>
+          )}
       </div>
-    </div>
+      </div>
+
+      {/* --- MODALS --- */}
+      
+      {/* Link Modal */}
+      <Modal
+        isOpen={activeModal === 'link'}
+        onClose={() => setActiveModal(null)}
+        title="Insert Link"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+            <input
+              type="text"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              autoFocus
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setActiveModal(null)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+            <button onClick={submitLink} className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700">Save</button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 };

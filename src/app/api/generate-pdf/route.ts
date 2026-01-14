@@ -291,16 +291,19 @@ export async function POST(request: NextRequest) {
         border-collapse: collapse;
         margin: 32px 0;
         font-size: 24px;
+        table-layout: fixed;
       }
       
       th, td {
-        border: 1px solid rgb(229, 231, 235);
+        border: 1px solid #ced4da;
         padding: 12px 16px;
         text-align: left;
+        vertical-align: top;
+        position: relative;
       }
       
       th {
-        background-color: rgb(249, 250, 251);
+        background-color: #f1f3f5;
         font-weight: 600;
         color: rgb(16, 24, 40);
       }

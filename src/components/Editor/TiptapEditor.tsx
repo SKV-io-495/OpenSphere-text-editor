@@ -3,12 +3,15 @@
 import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import FontFamily from '@tiptap/extension-font-family';
 import { Toolbar } from './Toolbar';
 
+import { Color } from '@tiptap/extension-color';
+import Highlight from '@tiptap/extension-highlight';
+import { TablePlus as Table, TableRowPlus as TableRow, TableHeaderPlus as TableHeader, TableCellPlus as TableCell } from 'tiptap-table-plus';
+import { FontSize } from './extensions/FontSizeExtension';
 import { PaginationPlus, PAGE_SIZES  } from 'tiptap-pagination-plus';
 
 
@@ -19,10 +22,29 @@ export const TiptapEditor = () => {
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const extensions = React.useMemo(() => [
-    StarterKit,
-    Underline,
+    StarterKit.configure({
+       link: {
+         openOnClick: false,
+         autolink: true,
+       },
+       // Enable other extensions included in StarterKit
+    }),
     TextStyle,
     FontFamily,
+    // Formatting
+    Color,
+    Highlight.configure({ multicolor: true }),
+    // Link and Underline removed (handled by StarterKit)
+    FontSize,
+    // Tables
+    Table.configure({
+      resizable: true,
+      allowTableNodeSelection: true,
+    }),
+    TableRow,
+    TableHeader,
+    TableCell,
+    // Pagination
     PaginationPlus.configure({
       pageHeight: 1060,
       pageWidth: 818,
@@ -32,8 +54,10 @@ export const TiptapEditor = () => {
       marginBottom: 50,
       marginLeft: 70,
       marginRight: 70,
-      pageFooterHeight: 20,
-      footerRight: "{page}",
+      pageFooterHeight: 40, // Increased for interactive footer
+      pageHeaderHeight: 40, // Added for interactive header
+      enableHeader: true,
+      enableFooter: true,
     } as any),
     TextAlign.configure({
       types: ['heading', 'paragraph'],
