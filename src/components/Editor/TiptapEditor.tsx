@@ -9,8 +9,8 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import FontFamily from '@tiptap/extension-font-family';
 import { Toolbar } from './Toolbar';
 
-import { PaginationExtension } from './extensions/PaginationExtension';
-// import { PageBreak } from './extensions/PageBreak'; // Removed old node approach
+import { PaginationPlus, PAGE_SIZES  } from 'tiptap-pagination-plus';
+
 
 import { useDocumentSave } from '@/hooks/useDocumentSave';
 
@@ -18,19 +18,30 @@ export const TiptapEditor = () => {
   const { status, saveDocument } = useDocumentSave();
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  const extensions = React.useMemo(() => [
+    StarterKit,
+    Underline,
+    TextStyle,
+    FontFamily,
+    PaginationPlus.configure({
+      pageHeight: 1060,
+      pageWidth: 818,
+      pageGap: 20,
+      pageBreakBackground: '#F3F4F6',
+      marginTop: 30,
+      marginBottom: 50,
+      marginLeft: 70,
+      marginRight: 70,
+      pageFooterHeight: 20,
+      footerRight: "{page}",
+    } as any),
+    TextAlign.configure({
+      types: ['heading', 'paragraph'],
+    }),
+  ], []);
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: [
-      StarterKit,
-      Underline,
-      TextStyle,
-      FontFamily,
-      PaginationExtension, // New Decoration Plugin
-      // PageBreak, // Removed
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-    ],
+    extensions,
     content: `
       <h2>O-1A Visa Case Strategy</h2>
       <p><strong>Beneficiary:</strong> Mr. Atal Agarwal</p>
@@ -51,17 +62,13 @@ export const TiptapEditor = () => {
     editorProps: {
       attributes: {
         // VISUAL STYLING (Screen)
-        // - w-[8.5in]: Matches US Letter width
-        // - min-h-[11in]: Matches US Letter height
-        // - padding: 1in (96px)
-        // - shadow-xl: Creates the "Paper" elevation effect
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none bg-white min-h-[1056px] shadow-xl mb-8 flex flex-col !max-w-none',
-        style: 'width: 8.5in; padding: 96px; font-family: "Times New Roman", Times, serif;',
+        // Enforcing width to match PaginationPlus config exactly
+        // Removed 'flex flex-col' to allow ProseMirror standard layout
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+        style: 'width: 818px; min-height: 1060px;', 
       },
     },
     onUpdate: ({ editor }) => {
-       // Auto-pagination is handled by the plugin now.
-
        // Save Logic
        if (timeoutRef.current) clearTimeout(timeoutRef.current);
        timeoutRef.current = setTimeout(() => {
@@ -71,14 +78,11 @@ export const TiptapEditor = () => {
   });
 
   return (
-    <div className="flex flex-col w-full items-center bg-[#F3F4F6] pb-10">
+    <div className="flex flex-col w-full items-center bg-[#F3F4F6] pb-10 min-h-screen">
       <Toolbar editor={editor} status={status} />
 
-      {/* Editor Container - The "Paper" is now the editor itself, but we wrap it to center it */}
-      <div
-        className="mt-8 shadow-xl print:shadow-none print:m-0 print:w-full"
-        // style={{ width: '816px' }} // Width is handled by editor attributes now
-      >
+      {/* Editor Container - The "Paper" is now the editor itself, but we wrap it to center it and handle print */}
+      <div className="mt-8">
          <EditorContent editor={editor} />
       </div>
     </div>

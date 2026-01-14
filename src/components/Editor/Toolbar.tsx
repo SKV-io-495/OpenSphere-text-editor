@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { type Editor } from '@tiptap/react';
 import {
   Bold,
@@ -10,8 +12,9 @@ import {
   AlignJustify,
   List,
   ListOrdered,
-  Type,
-  Check
+  Check,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,10 +26,54 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) => {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
   if (!editor) {
     return null;
   }
 
+  const handleDownloadPDF = async () => {
+    if (!editor || isGeneratingPDF) return;
+
+    setIsGeneratingPDF(true);
+
+    try {
+      // Get HTML content from the editor
+      const html = editor.getHTML();
+
+      // Call the PDF generation API
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ html }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate PDF');
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'document.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF download error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   const fonts = [
     { name: 'Serif (Times)', value: '"Times New Roman", Times, serif' },
@@ -34,7 +81,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) =>
   ];
 
   return (
-    <div className="sticky top-16 z-20 bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 flex-wrap print:hidden">
+    <div className="sticky top-16 z-20 bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 flex-wrap">
       {/* Font Family Selector */}
       <div className="relative inline-block text-left mr-2">
         <select
@@ -159,14 +206,27 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor, status = 'saved' }) =>
       </button>
 
       <div className="h-6 w-px bg-gray-300 mx-2" />
-      
-      {/* Insert Page Break */}
+
+      {/* Download PDF Button */}
       <button
-        onClick={() => editor.commands.setPageBreak()}
-        className="p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-600"
-        title="Insert Page Break"
+        onClick={handleDownloadPDF}
+        disabled={isGeneratingPDF}
+        className={cn(
+          "p-1.5 rounded transition-colors flex items-center gap-1",
+          isGeneratingPDF 
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+            : "hover:bg-gray-100 text-gray-600"
+        )}
+        title="Download PDF"
       >
-        <span className="text-xs font-serif font-bold">PB</span>
+        {isGeneratingPDF ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-xs">Generating...</span>
+          </>
+        ) : (
+          <Download className="w-4 h-4" />
+        )}
       </button>
       
       <div className="ml-auto flex items-center text-xs text-gray-400 gap-2">

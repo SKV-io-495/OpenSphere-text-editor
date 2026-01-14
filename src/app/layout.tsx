@@ -6,7 +6,7 @@ import { MainLayout } from "@/components/Layout/MainLayout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LegalBridge Clone",
+  title: "Sumit_LegalBridge Clone",
   description: "Advanced Document Editor",
 };
 

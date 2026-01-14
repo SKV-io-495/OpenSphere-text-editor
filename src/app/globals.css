@@ -3,7 +3,7 @@
 
 @theme {
   --font-sans: "Arial, Helvetica, sans-serif";
-  --background: #ffffff;
+  --background: #F3F4F6; /* Desk background */
   --foreground: #171717;
 }
 
@@ -19,110 +19,30 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Page Break Styling */
-/* Page Break Styling (Widget) */
-.page-break-marker {
-  height: 24px;
-  background-color: #F3F4F6; /* Match app background to look like a gap */
-  width: 100vw; /* Attempt to span full */
-  margin-left: -96px; /* Counteract padding */
-  margin-right: -96px;
-  width: calc(100% + 192px); /* Span the padding width */
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
-  margin-top: 2rem;
-  margin-bottom: 2rem;
-  pointer-events: none;
+/* --- TIPTAP PAGINATION PLUS STYLES --- */
+
+/* The actual page container created by the plugin */
+.ProseMirror {
+  outline: none;
+  background: white;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+  margin: 2rem auto;
+  /* explicit width not needed if extension handles it, but good to ensure centering context */
 }
 
-/* --- 1. VISUAL PAGE BREAK (SCREEN ONLY) --- */
-/* This makes the gap look like the space between two physical papers */
-.page-break-marker {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  background-color: #F3F4F6; /* Match app background */
-  
-  /* Logic to stretch across the editor's padding */
-  width: calc(100% + 192px); /* 100% + (96px left padding + 96px right padding) */
-  margin-left: -96px; 
-  margin-right: -96px;
-  
-  /* Borders to mimic paper edges */
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
-  
-  /* Spacing */
-  margin-top: 10px;
-  margin-bottom: 10px;
-  
-  /* Non-interactive label */
-  pointer-events: none;
-  font-size: 11px;
-  color: #9ca3af;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
+/* Page Break Visuals (Screen) */
+/* The plugin inserts a decoration with specific classes. 
+   Commonly it uses 'page-break' or similar. 
+   We target the visual gap implementation. */
 
-/* --- 2. PRINT / PDF EXPORT RESET --- */
-@media print {
-  /* Kill browser defaults (localhost text, date, margins) */
-  @page {
-    margin: 0mm;
-    size: letter;
-  }
+/* NOTE: tiptap-pagination-plus handles the logical splitting. 
+   We strictly style the gap here if the plugin exposes a class for it, 
+   or rely on the editor wrapper for the "page" look. 
+   Since the plugin manages the height/splitting, we ensure the 'desk' look 
+   renders properly between pages if the plugin separates them into nodes.
+   
+   However, simpler implementations of pagination plugins just insert a visible break.
+   If using the 'page-break' node logic: */
 
-  /* Hide the entire App UI */
-  body * {
-    visibility: hidden;
-  }
-
-  /* Reset HTML/Body for full control */
-  html, body {
-    height: 100%;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    background: white !important;
-  }
-  
-  /* Reset Sidebar Margins from MainLayout */
-  main, div, section, nav, aside {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: auto !important;
-    min-width: 0 !important;
-  }
-
-  /* Target the Editor Content specifically */
-  .ProseMirror, .ProseMirror * {
-    visibility: visible;
-  }
-
-  .ProseMirror {
-    position: absolute;
-    left: 0 !important;
-    top: 0 !important;
-    width: 8.5in !important;  /* Force US Letter Width */
-    padding: 1in !important;  /* WE enforce the 1-inch margin here */
-    margin: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    background: white !important;
-    overflow: visible !important;
-    box-sizing: border-box !important; /* Ensure padding is included in width */
-  }
-
-  /* Hide the gray gap visual, but enforce the physical break */
-  .page-break-marker {
-    opacity: 0; 
-    height: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    break-after: always !important; 
-    page-break-after: always !important; 
-    break-before: avoid !important;
-  }
-}
+   /* This class typically comes from the library's default styling or custom class config. 
+      For now, we ensure the editor has a white background and shadow (handled in TiptapEditor extensions/attributes). */
