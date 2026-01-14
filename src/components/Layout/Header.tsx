@@ -23,11 +23,11 @@ export const Header = () => {
         <div className="w-px h-6 bg-gray-200" />
         <div className="flex items-center gap-3 cursor-pointer">
           <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-medium text-sm">
-            AA
+            SV
           </div>
           <div className="text-sm">
-            <p className="font-medium text-gray-700">Atal Agarwal</p>
-            <p className="text-xs text-gray-500">Beneficiary</p>
+            <p className="font-medium text-gray-700">Sumit Verma</p>
+            
           </div>
         </div>
       </div>

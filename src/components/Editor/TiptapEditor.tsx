@@ -15,11 +15,8 @@ import { FontSize } from './extensions/FontSizeExtension';
 import { PaginationPlus, PAGE_SIZES  } from 'tiptap-pagination-plus';
 
 
-import { useDocumentSave } from '@/hooks/useDocumentSave';
-
 export const TiptapEditor = () => {
-  const { status, saveDocument } = useDocumentSave();
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  // Save logic removed as per requirements
 
   const extensions = React.useMemo(() => [
     StarterKit.configure({
@@ -63,25 +60,12 @@ export const TiptapEditor = () => {
       types: ['heading', 'paragraph'],
     }),
   ], []);
+  
   const editor = useEditor({
     immediatelyRender: false,
     extensions,
     content: `
-      <h2>O-1A Visa Case Strategy</h2>
-      <p><strong>Beneficiary:</strong> Mr. Atal Agarwal</p>
-      <p><strong>Visa Classification:</strong> O-1A (Individuals with Extraordinary Ability in Sciences, Education, Business, or Athletics)</p>
-      <p><strong>Date:</strong> January 9, 2026</p>
-      <p><strong>Case Overview</strong></p>
-      <p>This case involves securing O-1A classification for Mr. Atal Agarwal based on extraordinary ability in [specify field]. The primary goal is to demonstrate sustained national or international acclaim.</p>
-      <p>The primary goal is to demonstrate sustained national or international acclaim and recognition for achievements in the field through comprehensive documentation.</p>
-      <p><strong>Primary Objective:</strong> [Establish specific employment purpose and duration in the U.S.]</p>
-      <p><strong>Target Filing Date:</strong> [Add target date]</p>
-      <p><strong>Anticipated Start Date:</strong> [Add intended start date of U.S. employment]</p>
-      <p><strong>Eligibility Strategy</strong></p>
-      <p>To qualify for O-1A classification, we must establish at least 3 of the 8 regulatory criteria.</p>
-      <p>We will construct a narrative that ties these criteria to his specific contributions.</p>
-      <p><strong>Evidence Collection Plan:</strong> We need to gather letters from experts.</p>
-      <p>... (More content to fill page) ...</p>
+      <p><strong>Start writing here ...</strong></p>
     `,
     editorProps: {
       attributes: {
@@ -92,18 +76,15 @@ export const TiptapEditor = () => {
         style: 'width: 818px; min-height: 1060px;', 
       },
     },
+    // Interaction handlers can go here if needed in future
     onUpdate: ({ editor }) => {
-       // Save Logic
-       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-       timeoutRef.current = setTimeout(() => {
-         saveDocument(editor.getJSON());
-       }, 1500);
+       // Auto-save feature removed
     }
   });
 
   return (
     <div className="flex flex-col w-full items-center bg-[#F3F4F6] pb-10 min-h-screen">
-      <Toolbar editor={editor} status={status} />
+      <Toolbar editor={editor} />
 
       {/* Editor Container - The "Paper" is now the editor itself, but we wrap it to center it and handle print */}
       <div className="mt-8">
