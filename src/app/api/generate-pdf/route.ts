@@ -5,17 +5,14 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 /**
  * PDF Generation API Route
- * 
- * PAGINATION LOGIC:
+ * * PAGINATION LOGIC:
  * The tiptap-pagination-plus extension uses visual decorations (not HTML nodes)
  * to simulate page breaks. The editor.getHTML() returns continuous content.
- * 
- * To match page breaks exactly:
+ * * To match page breaks exactly:
  * - We set PDF page height to match the editor's pageHeight (1060px at 96 DPI)
  * - We apply the same margins (30px top, 50px bottom, 70px left/right)
  * - Puppeteer's natural page breaks will then occur at the same positions
- * 
- * Calculation:
+ * * Calculation:
  * - Editor pageHeight: 1060px (at 96 DPI = 11.04" ≈ Letter height)
  * - Editor content area: 1060 - 30 (top) - 50 (bottom) = 980px
  * - PDF page: Letter size (8.5" x 11") with matching margins
@@ -43,12 +40,15 @@ export async function POST(request: NextRequest) {
       const puppeteerCore = await import('puppeteer-core');
       const { default: chromium } = await import('@sparticuz/chromium');
       
-      const executablePath = process.env.CHROME_EXECUTABLE_PATH 
-        || await chromium.executablePath();
+      // FIX: Force remote download of Chromium to /tmp folder on Vercel
+      // This bypasses the local file check that causes the "directory does not exist" error
+      const executablePath = await chromium.executablePath(
+        "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+      );
         
       browser = await puppeteerCore.default.launch({
         args: chromium.args,
-        // defaultViewport: chromium.defaultViewport,
+        defaultViewport: (chromium as any).defaultViewport,
         executablePath,
         headless: (chromium as any).headless,
       });
@@ -71,7 +71,6 @@ export async function POST(request: NextRequest) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Load Inter font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
